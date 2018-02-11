@@ -20,7 +20,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import okio.BufferedSource;
 
 import static android.R.attr.version;
 import static com.delta.soaplib.network.ksoap2.transport.Transport.CONTENT_TYPE_SOAP_XML_CHARSET_UTF_8;
@@ -41,6 +40,7 @@ public class SoapNetWorkInteceptor implements Interceptor {
     private static final String NAMESAPCE = "Namespace";
     private static final String SOAPACTION = "SOAPAction";
     private static final String methodName = "MethodName";
+    private  String currentMethodName=null;
     private SoapConfig mSoapConfig;
     private static final MediaType MEDIA_TYPE = MediaType.parse("text/xml; charset=UTF-8");
 
@@ -63,6 +63,7 @@ public class SoapNetWorkInteceptor implements Interceptor {
 
     private Response soapProceed(Chain mChain, Request mOrignalRequest) throws IOException {
 
+
         Request mSoapRequest = buildSoapRequest(mOrignalRequest);
 
         Response mOrignalResponse = mChain.proceed(mSoapRequest);
@@ -72,16 +73,19 @@ public class SoapNetWorkInteceptor implements Interceptor {
             ResponseBody mBody = mOrignalResponse.body();
             MediaType mMediaType = mBody.contentType();
             if (mOrignalResponse != null) {
-                SoapSerializationEnvelope soapEnvelope = SoapHelper.getInstance().getSoapEnvelope();
-                BufferedSource mSource = mOrignalResponse.body().source();
-                SoapHelper.getInstance().parseResponse(soapEnvelope, mSource.inputStream());
-                //todo  怎么处理null的情况
-                String body = soapEnvelope.getResponse().toString();
+               // SoapSerializationEnvelope soapEnvelope = SoapHelper.getInstance().getSoapEnvelope();
+//                BufferedSource mSource = mOrignalResponse.body().source();
+     // SoapHelper.getInstance().parseResponse(soapEnvelope, mSource.inputStream());
+//                //todo  怎么处理null的情况
+//
+//                String body = soapEnvelope.bodyIn.toString();
+//                System.out.println("quest"+body);
                 ResponseBody mNewResponseBody = null;
                 if (mMediaType != null) {
-                    mNewResponseBody = ResponseBody.create(mMediaType, body);
+                    mNewResponseBody=parseResponseBody(mMediaType,currentMethodName,mBody);
+
                 } else {
-                    mNewResponseBody = ResponseBody.create(MEDIA_TYPE, body);
+                    mNewResponseBody =parseResponseBody(MEDIA_TYPE,currentMethodName,mBody);
                 }
 
                 Response.Builder mBuilder = mOrignalResponse.newBuilder();
@@ -137,7 +141,7 @@ public class SoapNetWorkInteceptor implements Interceptor {
 
             List<String> mMethodNames = mOrignalRequest.headers(methodName);
 
-            String mMethodName = mMethodNames.get(0);
+             currentMethodName = mMethodNames.get(0);
             RequestBody mBody = mOrignalRequest.body();
 
            MediaType mMediaType = null ;
@@ -155,14 +159,14 @@ public class SoapNetWorkInteceptor implements Interceptor {
                 FormBody mFormBody = (FormBody) mBody;
                 for (int mI = 0; mI < mFormBody.size(); mI++) {
                     String key = mFormBody.encodedName(mI);
-                    String value = URLDecoder.decode(mFormBody.encodedValue(mI)).replace("&lt;", "<").replace("&gt;", ">").replace("%24", "$");
+                    String value = URLDecoder.decode(mFormBody.encodedValue(mI)).replace("&lt;", "<").replace("&gt;", ">").replace("%24", "$").replace("&quot;","\"");
                     //String mValue = mFormBody.encodedValue(mI);
                     mMap.put(key, value);
                 }
                 //todo 添加namespace默認值
-                mRequestData = SoapHelper.getInstance().createRequestContent(mMethodName, namespace, mSoapConfig.Version(), mMap);
+                mRequestData = SoapHelper.getInstance().createRequestContent(currentMethodName, namespace, mSoapConfig.Version(), mMap);
             } else {
-                mRequestData = SoapHelper.getInstance().createRequestContent(mMethodName, namespace, mSoapConfig.Version(), null);
+                mRequestData = SoapHelper.getInstance().createRequestContent(currentMethodName, namespace, mSoapConfig.Version(), null);
 
             }
 
@@ -197,6 +201,37 @@ public class SoapNetWorkInteceptor implements Interceptor {
 
         return true;
 
+    }
+
+    /**
+     * 解析Response
+     * @param methodName
+     * @param responseBody
+     * @return
+     */
+    private ResponseBody parseResponseBody(MediaType mediaType, String methodName, ResponseBody responseBody) {
+        try {
+
+
+            String res = responseBody.string().replace("&lt;", "<").replace("&gt;", ">").replace("%24", "$");
+            if (res != null && !res.equals("")) {
+                // 字符转义
+                String ostar = "<" + methodName + "Result>";
+                String oend = "</" + methodName + "Result>";
+                if (res.contains(ostar) && res.contains(oend)) {
+                    int startIndex = res.indexOf(ostar) + ostar.length();
+                    int endIndex = res.lastIndexOf(oend);
+                    String ores = res.substring(startIndex, endIndex);
+                    Log.d("response", "parseResponseBody: "+ ores);
+                    return ResponseBody.create(mediaType, ores);
+                }
+            }else{
+                return ResponseBody.create(mediaType, res);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

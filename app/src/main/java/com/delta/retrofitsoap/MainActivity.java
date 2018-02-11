@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.delta.retrofitsoap.presenter.IWeatherPresenterImpl;
 import com.delta.retrofitsoap.view.IWeatherView;
@@ -12,6 +13,7 @@ import com.delta.retrofitsoap.view.IWeatherView;
 public class MainActivity extends AppCompatActivity implements IWeatherView, View.OnClickListener {
     EditText city;
     IWeatherPresenterImpl mIWeatherPresenter;
+    TextView mTextView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -19,8 +21,9 @@ public class MainActivity extends AppCompatActivity implements IWeatherView, Vie
 
        mIWeatherPresenter = new IWeatherPresenterImpl(this);
         city = (EditText) findViewById(R.id.et);
+        mTextView = (TextView) findViewById(R.id.tv_city);
 
-         findViewById(R.id.bt).setOnClickListener(this);
+        findViewById(R.id.bt).setOnClickListener(this);
     }
 
     @Override
@@ -30,5 +33,10 @@ public class MainActivity extends AppCompatActivity implements IWeatherView, Vie
         }
         mIWeatherPresenter.getSupportCity(city.getText().toString());
 
+    }
+
+    @Override
+    public void showText(String mString) {
+        mTextView.setText(mString);
     }
 }

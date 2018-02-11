@@ -1,5 +1,6 @@
 package com.delta.retrofitsoap;
 
+import okhttp3.ResponseBody;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.Headers;
@@ -20,5 +21,6 @@ public interface IWeatherApi {
             "SOAPAction:http://WebXml.com.cn/getSupportCity",
             "MethodName:getSupportCity"
             })
-    rx.Observable<Object> getSupportCity(@Field("byProvinceName") String byProvinceName);
+    rx.Observable<ResponseBody> getSupportCity(@Field("byProvinceName") String byProvinceName);
+
 }

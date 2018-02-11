@@ -24,7 +24,7 @@ public class NetWorkManager {
 
     public static IWeatherApi getAPIService(){
 
-        SoapConfig mSoapConfig = SoapConfig.builder().version(SoapSerializationEnvelope.VER11).build();
+        SoapConfig mSoapConfig = SoapConfig.builder().version(SoapSerializationEnvelope.VER12).build();
 
         OkHttpClient mOkHttpClient=new OkHttpClient.Builder().addInterceptor(new SoapNetWorkInteceptor(mSoapConfig)).build();
         Retrofit retrofit = new Retrofit.Builder().client(mOkHttpClient).baseUrl(API.URL)

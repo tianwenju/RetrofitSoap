@@ -6,4 +6,5 @@ package com.delta.retrofitsoap.view;
 
 public interface IWeatherView {
 
+    void showText(String mString);
 }
